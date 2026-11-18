@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#122a42">
+<title>カットリスト撮影</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icon-180.png">
+<style>
+:root{--navy:#122a42;--amber:#f5a623;--bg:#f4f6f8;--card:#fff;--text:#1c2733;--muted:#66788a;--line:#d8e0e7;--green:#1e9e62;--yellow:#e6a817;--gray:#9aa9b5;--red:#d64545}
+*{box-sizing:border-box}html,body{margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;background:var(--bg);color:var(--text);-webkit-tap-highlight-color:transparent}
+header{background:var(--navy);color:#fff;padding:14px 16px calc(12px + env(safe-area-inset-top)*0);padding-top:calc(12px + env(safe-area-inset-top));position:sticky;top:0;z-index:10}
+header .t{font-size:19px;font-weight:700}header .s{font-size:12px;opacity:.8;margin-top:2px}
+main{max-width:720px;margin:0 auto;padding:14px 14px 110px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+.btn{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:10px 16px;border-radius:12px;border:1px solid var(--line);background:#fff;color:var(--text);font-size:16px;font-weight:600;cursor:pointer}
+.btn.primary{background:var(--navy);color:#fff;border-color:var(--navy)}
+.btn.amber{background:var(--amber);color:#231a00;border-color:var(--amber)}
+.btn.danger{color:var(--red)} .btn.small{min-height:40px;font-size:14px;padding:6px 12px}
+.btn:disabled{opacity:.45}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.spread{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.bar{height:10px;background:#e6ecf1;border-radius:6px;overflow:hidden;margin:8px 0}
+.bar>i{display:block;height:100%;background:var(--green)}
+.badge{display:inline-block;font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;border:1px solid var(--line)}
+.badge.req{color:#b3261e;border-color:#f0c4c0;background:#fdf0ef}
+.badge.rec{color:#7a5b00;border-color:#ecd9a0;background:#fdf6dd}
+.badge.opt{color:var(--muted)}
+.st{font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;color:#fff}
+.st.pending{background:var(--gray)} .st.shot{background:var(--yellow)} .st.confirmed{background:var(--green)}
+input,select,textarea{width:100%;font-size:16px;padding:11px;border:1px solid var(--line);border-radius:10px;background:#fff;margin:4px 0 12px}
+label{font-size:13px;font-weight:700;color:var(--muted)}
+.bigshot{font-size:26px;font-weight:800;line-height:1.35;margin:8px 0}
+.note{white-space:pre-wrap;color:var(--muted);font-size:15px}
+.fixedbar{position:fixed;left:0;right:0;bottom:0;background:rgba(255,255,255,.97);border-top:1px solid var(--line);padding:10px 14px calc(10px + env(safe-area-inset-bottom));z-index:20}
+.fixedbar .inner{max-width:720px;margin:0 auto}
+.bigbtn{width:100%;min-height:64px;font-size:19px;border-radius:14px}
+.modal{position:fixed;inset:0;background:rgba(10,20,30,.55);display:none;align-items:center;justify-content:center;z-index:50;padding:18px}
+.modal.open{display:flex}
+.modal .box{background:#fff;border-radius:16px;padding:20px;max-width:480px;width:100%}
+.hidden{display:none!important}
+.muted{color:var(--muted);font-size:14px}
+h2{font-size:18px;margin:4px 0 10px} h3{font-size:16px;margin:14px 0 6px}
+.checkline{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
+.checkline input{width:24px;height:24px;margin:0;flex:none}
+a{color:var(--navy)}
+</style>
+</head>
+<body>
+<header><div class="t" id="hdrTitle">カットリスト撮影</div><div class="s" id="hdrSub">撮り忘れ防止・進行管理</div></header>
+<main id="app"></main>
+
+<div class="modal" id="modal"><div class="box">
+<div id="modalText" style="font-size:16px;line-height:1.6"></div>
+<div class="row" style="margin-top:16px;justify-content:flex-end">
+<button class="btn" id="modalCancel">戻る</button>
+<button class="btn amber" id="modalOk">そのまま進める</button>
+</div></div></div>
+
+<input type="file" id="importFile" accept="application/json" class="hidden">
+
+<script>
+"use strict";
+/* ===== DataManager: 保存はここに閉じ込める（将来IndexedDBへ移行可能に） ===== */
+const KEY="cutlist.projects.v1";
+const DataManager={
+  load(){ try{ const d=JSON.parse(localStorage.getItem(KEY)); if(d&&d.version===1&&Array.isArray(d.projects)) return d; }catch(e){} return {version:1,projects:[]}; },
+  save(data){ localStorage.setItem(KEY, JSON.stringify(data)); }
+};
+let DB=DataManager.load();
+const save=()=>DataManager.save(DB);
+const uid=p=>p+"_"+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+const today=()=>{ const d=new Date(); return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); };
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+/* ===== テンプレート（ハイブリッド型の初期セット） ===== */
+const TEMPLATES={
+  school:{label:"学校・集合写真",shots:[
+    ["全員集合","required",""],["クラス別集合","required",""],["担任・先生との集合","required",""],["個人写真（全員分）","required","人数分を確認"],
+    ["集合写真・別ポーズ","recommended",""],["集合写真・縦構図","recommended",""],["会場の様子","recommended",""],["オフショット","optional",""],["小物・看板アップ","optional",""]]},
+  sports:{label:"スポーツ団体・卒団",shots:[
+    ["チーム全員集合","required",""],["監督・コーチとの集合","required",""],["卒団生全員","required",""],["卒団生個人（全員分）","required","人数分を確認"],["最終学年だけの集合","required",""],
+    ["背番号が見える個人","recommended",""],["集合・縦構図","recommended",""],["表彰・セレモニー","recommended",""],["ベンチ・応援風景","optional",""],["試合風景","optional",""],["保護者との写真","optional",""]]},
+  cosplay:{label:"コスプレ",shots:[
+    ["全身・正面（縦）","required",""],["全身・斜め","required",""],["バストアップ","required",""],["顔アップ","required",""],
+    ["武器・小道具アップ","recommended",""],["キャラクターらしいポーズ","recommended",""],["背景を活かした引き（横）","recommended",""],["SNS用縦構図","recommended",""],["衣装ディテール","optional",""],["2ショット・併せ","optional",""]]},
+  vehicle:{label:"車両",shots:[
+    ["フロント正面","required",""],["斜め45度（前）","required",""],["サイド","required",""],["リア","required",""],["斜め45度（後）","required",""],
+    ["ホイール","recommended",""],["エンブレム","recommended",""],["内装全体","recommended",""],["メーター","recommended",""],["エンジンルーム","recommended",""],
+    ["ディテール（ライト等）","optional",""],["オーナーとの写真","optional","公開用ではナンバーの扱いに注意"]]},
+  general:{label:"汎用",shots:[
+    ["メインカット","required",""],["別アングル","required",""],["縦構図","required",""],["引き","recommended",""],["寄り","recommended",""],["オフショット","optional",""]]}
+};
+const CLOSING_DEFAULTS=["必須カットの撮影が完了した","集合写真の人数を確認した","集合写真の目つぶりを確認した","個人写真の撮影漏れを確認した","縦構図で必要なカットを確認した","SDカード／メディアの保存状況を確認した","バックアップを実施した（または実施予定をメモした）"];
+const PRIO={required:"必須",recommended:"推奨",optional:"任意"};
+const ST={pending:"未撮影",shot:"撮影済み・要確認",confirmed:"確認完了"};
+
+function newProject(genre){
+  const t=TEMPLATES[genre]||TEMPLATES.general;
+  return {id:uid("project"),title:"",date:today(),location:"",genre,notes:"",status:"active",createdAt:Date.now(),updatedAt:Date.now(),cursorShotId:null,
+    shots:t.shots.map((s,i)=>({id:uid("shot"),title:s[0],priority:s[1],status:"pending",notes:s[2],plannedCount:"",order:i+1,completedAt:null})),
+    closingChecks:CLOSING_DEFAULTS.map((l,i)=>({id:"check_"+(i+1),label:l,done:false}))};
+}
+function getProject(id){ return DB.projects.find(p=>p.id===id); }
+function progress(p){
+  const req=p.shots.filter(s=>s.priority==="required");
+  const doneReq=req.filter(s=>s.status!=="pending").length;
+  const doneAll=p.shots.filter(s=>s.status!=="pending").length;
+  return {reqTotal:req.length,reqDone:doneReq,allTotal:p.shots.length,allDone:doneAll,
+    pct:p.shots.length?Math.round(doneAll/p.shots.length*100):0,
+    unconfirmed:p.shots.filter(s=>s.status==="shot").length,
+    reqLeft:req.filter(s=>s.status==="pending")};
+}
+function touch(p){ p.updatedAt=Date.now(); save(); }
+
+/* ===== 画面遷移 ===== */
+let view={name:"home",projectId:null,filter:"all"};
+const app=document.getElementById("app");
+function go(name,projectId){ view={name,projectId:projectId??view.projectId,filter:view.filter||"all"}; render(); window.scrollTo(0,0); }
+function render(){
+  document.getElementById("hdrSub").textContent = view.name==="home" ? "撮り忘れ防止・進行管理" : (getProject(view.projectId)?.title||"");
+  ({home:vHome,edit:vEdit,shoot:vShoot,list:vList,closing:vClosing}[view.name]||vHome)();
+}
+
+/* ===== HOME ===== */
+function vHome(){
+  const list=[...DB.projects].sort((a,b)=>b.updatedAt-a.updatedAt);
+  app.innerHTML=`
+  <div class="row" style="margin-bottom:12px">
+    <button class="btn primary" onclick="createProject()">＋ 新規案件</button>
+    <button class="btn" onclick="exportJSON()">JSON書き出し</button>
+    <button class="btn" onclick="document.getElementById('importFile').click()">JSON読み込み</button>
+  </div>
+  ${list.length?"":'<div class="card muted">案件がまだありません。「新規案件」から始めてください。</div>'}
+  ${list.map(p=>{const pr=progress(p);return `<div class="card">
+    <div class="spread"><strong style="font-size:17px">${esc(p.title||"（無題）")}</strong><span class="badge">${p.status==="done"?"完了":"進行中"}</span></div>
+    <div class="muted">${esc(p.date)} ${esc(p.location)} ・ ${esc(TEMPLATES[p.genre]?.label||"")}</div>
+    <div class="bar"><i style="width:${pr.pct}%"></i></div>
+    <div class="muted">必須 ${pr.reqDone}/${pr.reqTotal} ・ 全体 ${pr.allDone}/${pr.allTotal}${pr.unconfirmed?` ・ 要確認 ${pr.unconfirmed}`:""}</div>
+    <div class="row" style="margin-top:10px">
+      <button class="btn amber small" onclick="go('shoot','${p.id}')">撮影中モード</button>
+      <button class="btn small" onclick="go('list','${p.id}')">カット一覧</button>
+      <button class="btn small" onclick="go('edit','${p.id}')">編集</button>
+      <button class="btn small" onclick="duplicateProject('${p.id}')">複製</button>
+    </div></div>`}).join("")}`;
+}
+function createProject(){
+  const p=newProject("general"); p.title="新規案件"; DB.projects.push(p); save(); go("edit",p.id);
+}
+function duplicateProject(id){
+  const src=getProject(id); if(!src) return;
+  const p=JSON.parse(JSON.stringify(src));
+  p.id=uid("project"); p.title=src.title+"（複製）"; p.status="active"; p.createdAt=Date.now(); p.updatedAt=Date.now(); p.cursorShotId=null;
+  p.shots.forEach(s=>{ s.status="pending"; s.completedAt=null; });
+  (p.closingChecks||[]).forEach(c=>c.done=false);
+  DB.projects.push(p); save(); render();
+}
+
+/* ===== 編集 ===== */
+function vEdit(){
+  const p=getProject(view.projectId); if(!p) return go("home");
+  app.innerHTML=`
+  <button class="btn small" onclick="go('home')">← 案件一覧</button>
+  <div class="card" style="margin-top:12px"><h2>案件の編集</h2>
+    <label>案件名（必須）</label><input id="fTitle" value="${esc(p.title)}">
+    <label>撮影日</label><input id="fDate" type="date" value="${esc(p.date)}">
+    <label>場所</label><input id="fLoc" value="${esc(p.location)}">
+    <label>ジャンル（変更するとテンプレートでカットを入れ直します）</label>
+    <select id="fGenre">${Object.entries(TEMPLATES).map(([k,v])=>`<option value="${k}" ${p.genre===k?"selected":""}>${v.label}</option>`).join("")}</select>
+    <label>案件メモ</label><textarea id="fNotes" rows="2">${esc(p.notes)}</textarea>
+    <div class="row"><button class="btn primary" onclick="saveProjectForm()">保存する</button>
+    <button class="btn danger" onclick="askDeleteProject()">案件を削除</button></div>
+  </div>
+  <div class="card"><h2>カット（${p.shots.length}件）</h2>
+    ${p.shots.map((s,i)=>`<div class="checkline"><div style="flex:1">
+      <strong>${i+1}. ${esc(s.title)}</strong> <span class="badge ${s.priority==="required"?"req":s.priority==="recommended"?"rec":"opt"}">${PRIO[s.priority]}</span>
+      ${s.notes?`<div class="muted">${esc(s.notes)}</div>`:""}</div>
+      <button class="btn small" onclick="moveShot(${i},-1)" ${i===0?"disabled":""}>↑</button>
+      <button class="btn small" onclick="moveShot(${i},1)" ${i===p.shots.length-1?"disabled":""}>↓</button>
+      <button class="btn small" onclick="editShot(${i})">編集</button>
+      <button class="btn small danger" onclick="deleteShot(${i})">削除</button></div>`).join("")}
+    <div id="shotForm"></div>
+    <button class="btn" style="margin-top:10px" onclick="editShot(-1)">＋ カットを追加</button>
+  </div>`;
+}
+function saveProjectForm(){
+  const p=getProject(view.projectId); const genre=document.getElementById("fGenre").value;
+  p.title=document.getElementById("fTitle").value.trim()||"（無題）";
+  p.date=document.getElementById("fDate").value; p.location=document.getElementById("fLoc").value;
+  p.notes=document.getElementById("fNotes").value;
+  if(genre!==p.genre){ p.genre=genre; const t=TEMPLATES[genre]; p.shots=t.shots.map((s,i)=>({id:uid("shot"),title:s[0],priority:s[1],status:"pending",notes:s[2],plannedCount:"",order:i+1,completedAt:null})); p.cursorShotId=null; }
+  touch(p); render();
+}
+function moveShot(i,d){ const p=getProject(view.projectId); const j=i+d; [p.shots[i],p.shots[j]]=[p.shots[j],p.shots[i]]; p.shots.forEach((s,k)=>s.order=k+1); touch(p); render(); }
+function deleteShot(i){ const p=getProject(view.projectId); p.shots.splice(i,1); p.shots.forEach((s,k)=>s.order=k+1); touch(p); render(); }
+function editShot(i){
+  const p=getProject(view.projectId); const s=i>=0?p.shots[i]:{title:"",priority:"required",notes:"",plannedCount:""};
+  document.getElementById("shotForm").innerHTML=`<div style="border-top:1px solid var(--line);margin-top:12px;padding-top:12px">
+    <label>カット名</label><input id="sTitle" value="${esc(s.title)}">
+    <label>優先度</label><select id="sPrio">${Object.entries(PRIO).map(([k,v])=>`<option value="${k}" ${s.priority===k?"selected":""}>${v}</option>`).join("")}</select>
+    <label>メモ</label><input id="sNotes" value="${esc(s.notes||"")}">
+    <label>想定枚数（任意）</label><input id="sCount" type="number" min="0" value="${esc(s.plannedCount||"")}">
+    <div class="row"><button class="btn primary small" onclick="saveShot(${i})">このカットを保存</button></div></div>`;
+  document.getElementById("sTitle").focus();
+}
+function saveShot(i){
+  const p=getProject(view.projectId); const title=document.getElementById("sTitle").value.trim(); if(!title) return;
+  const data={title,priority:document.getElementById("sPrio").value,notes:document.getElementById("sNotes").value,plannedCount:document.getElementById("sCount").value};
+  if(i>=0) Object.assign(p.shots[i],data);
+  else p.shots.push({id:uid("shot"),status:"pending",completedAt:null,order:p.shots.length+1,...data});
+  touch(p); render();
+}
+function askDeleteProject(){
+  showModal("この案件を削除しますか？この操作は戻せません。","削除する",()=>{
+    DB.projects=DB.projects.filter(p=>p.id!==view.projectId); save(); go("home");
+  });
+}
+
+/* ===== 撮影中モード ===== */
+let wakeLock=null;
+async function keepAwake(){ try{ if("wakeLock" in navigator) wakeLock=await navigator.wakeLock.request("screen"); }catch(e){} }
+function currentShot(p){
+  if(!p.shots.length) return null;
+  let s=p.shots.find(x=>x.id===p.cursorShotId);
+  if(!s) s=p.shots.find(x=>x.status==="pending")||p.shots[0];
+  return s;
+}
+function vShoot(){
+  const p=getProject(view.projectId); if(!p) return go("home");
+  keepAwake();
+  const pr=progress(p); const cur=currentShot(p);
+  if(cur) p.cursorShotId=cur.id;
+  const idx=cur?p.shots.indexOf(cur):-1;
+  const next=cur?p.shots.slice(idx+1).find(s=>s.status==="pending")||p.shots.find(s=>s.status==="pending"&&s.id!==cur.id):null;
+  app.innerHTML=`
+  <button class="btn small" onclick="go('home')">← 案件一覧</button>
+  <div class="card" style="margin-top:12px">
+    <div class="spread"><span class="muted">必須 ${pr.reqDone}/${pr.reqTotal} ・ 全体 ${pr.allDone}/${pr.allTotal}</span><span class="muted">${pr.pct}%</span></div>
+    <div class="bar"><i style="width:${pr.pct}%"></i></div>
+    ${cur?`
+    <div class="muted">カット ${idx+1} / ${p.shots.length} ・ <span class="st ${cur.status}">${ST[cur.status]}</span> <span class="badge ${cur.priority==="required"?"req":cur.priority==="recommended"?"rec":"opt"}">${PRIO[cur.priority]}</span></div>
+    <div class="bigshot">${esc(cur.title)}</div>
+    ${cur.notes?`<div class="note">${esc(cur.notes)}</div>`:""}
+    ${cur.plannedCount?`<div class="muted" style="margin-top:6px">想定 ${esc(cur.plannedCount)} 枚</div>`:""}
+    <div class="muted" style="margin-top:14px">次：${next?esc(next.title):"未撮影はありません"}</div>`
+    :'<div class="muted">カットがありません。編集画面で追加してください。</div>'}
+  </div>
+  <div class="row">
+    <button class="btn" onclick="stepShot(-1)" ${idx<=0?"disabled":""}>← 前へ</button>
+    <button class="btn" onclick="stepShot(1)" ${idx>=p.shots.length-1?"disabled":""}>次へ →</button>
+    <button class="btn" onclick="undoShot()">1つ戻す</button>
+    <button class="btn" onclick="go('list','${p.id}')">一覧</button>
+    <button class="btn" onclick="go('closing','${p.id}')">撮影後チェック</button>
+  </div>
+  ${cur?`<div class="fixedbar"><div class="inner"><button class="btn amber bigbtn" onclick="markShot()">撮影済みにする（要確認）</button></div></div>`:""}`;
+}
+function stepShot(d){ const p=getProject(view.projectId); const cur=currentShot(p); const i=p.shots.indexOf(cur)+d; if(i<0||i>=p.shots.length) return; p.cursorShotId=p.shots[i].id; touch(p); render(); }
+function markShot(){
+  const p=getProject(view.projectId); const cur=currentShot(p); if(!cur) return;
+  if(cur.status==="pending"){ cur.status="shot"; cur.completedAt=Date.now(); }
+  const nxt=p.shots.find(s=>s.status==="pending"); if(nxt) p.cursorShotId=nxt.id;
+  touch(p); render();
+}
+function undoShot(){
+  const p=getProject(view.projectId); const cur=currentShot(p); if(!cur) return;
+  if(cur.status!=="pending"){ cur.status="pending"; cur.completedAt=null; touch(p); render(); }
+}
+
+/* ===== カット一覧 ===== */
+function vList(){
+  const p=getProject(view.projectId); if(!p) return go("home");
+  const f=view.filter||"all";
+  const shots=p.shots.filter(s=> f==="all"?true : f==="pending"?s.status==="pending" : f==="required"?s.priority==="required" : f==="shot"?s.status==="shot":true);
+  app.innerHTML=`
+  <button class="btn small" onclick="go('home')">← 案件一覧</button>
+  <div class="card" style="margin-top:12px"><h2>カット一覧</h2>
+  <div class="row" style="margin-bottom:8px">
+    ${[["all","すべて"],["pending","未撮影だけ"],["required","必須だけ"],["shot","要確認だけ"]].map(([k,v])=>`<button class="btn small ${f===k?"primary":""}" onclick="setFilter('${k}')">${v}</button>`).join("")}
+  </div>
+  ${shots.map(s=>`<div class="checkline"><div style="flex:1"><strong>${esc(s.title)}</strong>
+    <span class="badge ${s.priority==="required"?"req":s.priority==="recommended"?"rec":"opt"}">${PRIO[s.priority]}</span>
+    ${s.notes?`<div class="muted">${esc(s.notes)}</div>`:""}</div>
+    <button class="st ${s.status}" style="border:0;min-height:40px;cursor:pointer" onclick="cycleStatus('${s.id}')">${ST[s.status]}</button></div>`).join("")||'<div class="muted">該当するカットはありません。</div>'}
+  <div class="muted" style="margin-top:8px">状態ボタンを押すたびに 未撮影 → 撮影済み・要確認 → 確認完了 と切り替わります。</div>
+  </div>`;
+}
+function setFilter(f){ view.filter=f; render(); }
+function cycleStatus(id){ const p=getProject(view.projectId); const s=p.shots.find(x=>x.id===id); if(!s) return;
+  s.status = s.status==="pending" ? "shot" : s.status==="shot" ? "confirmed" : "pending";
+  s.completedAt = s.status==="pending" ? null : (s.completedAt||Date.now()); touch(p); render(); }
+
+/* ===== 撮影後チェック ===== */
+function vClosing(){
+  const p=getProject(view.projectId); if(!p) return go("home");
+  const pr=progress(p);
+  if(!p.closingChecks) p.closingChecks=CLOSING_DEFAULTS.map((l,i)=>({id:"check_"+(i+1),label:l,done:false}));
+  app.innerHTML=`
+  <button class="btn small" onclick="go('shoot','${p.id}')">← 撮影中モード</button>
+  <div class="card" style="margin-top:12px"><h2>撮影後チェック</h2>
+    <div class="muted">必須の未撮影：${pr.reqLeft.length}件 ・ 要確認のまま：${pr.unconfirmed}件</div>
+    ${pr.reqLeft.length?`<div style="margin-top:8px">${pr.reqLeft.map(s=>`<div>・${esc(s.title)} <span class="badge req">必須・未撮影</span></div>`).join("")}</div>`:""}
+    ${p.closingChecks.map((c,i)=>`<label class="checkline"><input type="checkbox" ${c.done?"checked":""} onchange="toggleCheck(${i},this.checked)"><span>${esc(c.label)}</span></label>`).join("")}
+  </div>
+  <div class="card"><h2>書き出し・完了</h2>
+    <div class="row">
+      <button class="btn" onclick="exportCSV()">CSV書き出し</button>
+      <button class="btn" onclick="exportJSON()">JSON書き出し</button>
+      <button class="btn primary" onclick="completeProject()">案件を完了にする</button>
+    </div>
+    <div class="muted" style="margin-top:8px">状態：${p.status==="done"?"完了":"進行中"}</div>
+  </div>`;
+}
+function toggleCheck(i,v){ const p=getProject(view.projectId); p.closingChecks[i].done=v; touch(p); }
+function completeProject(){
+  const p=getProject(view.projectId); const pr=progress(p);
+  if(pr.reqLeft.length>0){
+    showModal(`必須カットが ${pr.reqLeft.length} 件、未撮影のままです。それでも案件を完了にしますか？`,"完了にする",()=>{ p.status="done"; touch(p); go("home"); });
+  } else { p.status="done"; touch(p); go("home"); }
+}
+
+/* ===== 書き出し・読み込み ===== */
+function download(name,text,type){
+  const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([text],{type})); a.download=name; a.click(); setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+function exportJSON(){ download("cutlist-backup-"+today()+".json", JSON.stringify(DB,null,2), "application/json"); }
+function exportCSV(){
+  const p=getProject(view.projectId); if(!p) return;
+  const head=["案件名","撮影日","場所","No","カット名","優先度","状態","メモ","想定枚数","完了日時"];
+  const q=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
+  const rows=p.shots.map((s,i)=>[p.title,p.date,p.location,i+1,s.title,PRIO[s.priority],ST[s.status],s.notes,s.plannedCount,s.completedAt?new Date(s.completedAt).toLocaleString("ja-JP"):""].map(q).join(","));
+  download("cutlist-"+(p.title||"project")+".csv","﻿"+head.map(q).join(",")+"\n"+rows.join("\n"),"text/csv");
+}
+document.getElementById("importFile").addEventListener("change",e=>{
+  const f=e.target.files[0]; if(!f) return;
+  f.text().then(t=>{ try{ const d=JSON.parse(t); if(d&&Array.isArray(d.projects)){ DB={version:1,projects:d.projects}; save(); go("home"); } }catch(err){} e.target.value=""; });
+});
+
+/* ===== モーダル（confirm()は使わない） ===== */
+let modalCb=null;
+function showModal(text,okLabel,cb){
+  document.getElementById("modalText").textContent=text;
+  document.getElementById("modalOk").textContent=okLabel; modalCb=cb;
+  document.getElementById("modal").classList.add("open");
+}
+document.getElementById("modalCancel").onclick=()=>document.getElementById("modal").classList.remove("open");
+document.getElementById("modalOk").onclick=()=>{ document.getElementById("modal").classList.remove("open"); if(modalCb) modalCb(); };
+
+render();
+if("serviceWorker" in navigator){ navigator.serviceWorker.register("sw.js").catch(()=>{}); }
+</script>
+</body>
+</html>
