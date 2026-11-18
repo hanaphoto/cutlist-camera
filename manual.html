@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#122a42">
+<title>説明書｜カットリスト撮影</title>
+<link rel="icon" href="icon-192.png">
+<style>
+:root{--navy:#122a42;--amber:#f5a623;--bg:#f4f6f8;--card:#fff;--text:#1c2733;--muted:#66788a;--line:#d8e0e7;--green:#1e9e62;--yellow:#e6a817;--gray:#9aa9b5}
+*{box-sizing:border-box}body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",sans-serif;background:var(--bg);color:var(--text);line-height:1.75}
+header{background:var(--navy);color:#fff;padding:22px 16px}header .inner,main{max-width:760px;margin:0 auto}header h1{font-size:22px;margin:0}header p{margin:4px 0 0;opacity:.85;font-size:14px}
+main{padding:16px 14px 60px}.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:14px}
+h2{font-size:18px;margin:0 0 10px;border-left:5px solid var(--amber);padding-left:10px}h3{font-size:16px;margin:16px 0 6px}
+p,li{font-size:15px}ul,ol{padding-left:22px;margin:6px 0}table{border-collapse:collapse;width:100%;margin:8px 0;font-size:14px}th,td{border:1px solid var(--line);padding:8px;text-align:left;vertical-align:top}th{background:#eef3f7}
+.st{display:inline-block;font-size:12px;font-weight:700;padding:1px 8px;border-radius:999px;color:#fff}.st.pending{background:var(--gray)}.st.shot{background:var(--yellow)}.st.confirmed{background:var(--green)}
+.btn{display:inline-flex;align-items:center;min-height:48px;padding:10px 18px;border-radius:12px;background:var(--navy);color:#fff;text-decoration:none;font-weight:700}
+.muted{color:var(--muted);font-size:14px}.warn{background:#fdf6dd;border:1px solid #ecd9a0;border-radius:10px;padding:10px 14px;font-size:14px}
+code{background:#eef3f7;padding:1px 6px;border-radius:6px;font-size:13px}
+</style>
+</head>
+<body>
+<header><div class="inner"><h1>カットリスト撮影｜説明書</h1><p>出張撮影の「撮り忘れ」を防ぐ、撮影進行管理アプリの使い方</p></div></header>
+<main>
+
+<div class="card">
+<h2>1. このアプリについて</h2>
+<p>「カットリスト撮影」は、撮影前に決めた<strong>撮るべきカット（カットリスト）</strong>を、現場で1つずつ確実に潰していくためのアプリです。一眼カメラの代わりではありません。一眼で撮りながら、横に置いたスマホで「何を撮ったか／何が残っているか」だけを管理します。</p>
+<ul>
+<li>カメラ機能はありません（撮影は一眼で行います）</li>
+<li>ログイン不要、インターネット不要（オフラインで動きます）</li>
+<li>入力したデータは<strong>この端末の中だけ</strong>に保存され、外部へ送信されることはありません</li>
+</ul>
+<p><a class="btn" href="./index.html">アプリを開く</a></p>
+</div>
+
+<div class="card">
+<h2>2. 始め方（iPhone）</h2>
+<ol>
+<li>Safariで <code>https://hanaphoto.github.io/cutlist-camera/</code> を開く</li>
+<li>共有ボタン（□に↑）→「ホーム画面に追加」を選ぶ</li>
+<li>ホーム画面の「カットリスト」アイコンから開く（次からはオフラインでも開けます）</li>
+</ol>
+<p class="muted">Androidの場合は Chrome のメニューから「ホーム画面に追加」／「アプリをインストール」です。</p>
+<div class="warn"><strong>大切な注意：</strong>データはホーム画面に追加したアプリ（またはSafari）の保存領域に入ります。Safariの「履歴とWebサイトデータを消去」をするとデータも消えます。大事な案件の前に、§8のJSON書き出しでバックアップを取る習慣を付けてください。</div>
+</div>
+
+<div class="card">
+<h2>3. 基本の流れ（3つの場面）</h2>
+<h3>撮影前（準備）</h3>
+<ol>
+<li>案件一覧で「＋ 新規案件」を押す</li>
+<li>案件名・撮影日・場所・ジャンルを入れて保存する。ジャンルを選ぶと、そのジャンルの定番カットが自動で入ります</li>
+<li>カットを現場に合わせて追加・削除し、↑↓で順番を並べ替える。各カットに優先度（必須／推奨／任意）とメモを付ける</li>
+</ol>
+<h3>撮影中</h3>
+<ol>
+<li>案件の「撮影中モード」を開く。今撮るべきカットが大きく表示されます</li>
+<li>一眼でそのカットを撮ったら、画面下の大きなボタン<strong>「撮影済みにする（要確認）」</strong>を押す。次の未撮影カットへ自動で進みます</li>
+<li>順番を飛ばしたい時は「次へ →」、間違えた時は「1つ戻す」を使います</li>
+</ol>
+<h3>撮影後</h3>
+<ol>
+<li>一眼の再生画面で画像を確認し、カット一覧で状態を<strong>「確認完了」</strong>まで進める</li>
+<li>「撮影後チェック」で、人数・目つぶり・バックアップなどを確認する</li>
+<li>必要ならCSV／JSONで書き出し、案件を「完了」にする</li>
+</ol>
+</div>
+
+<div class="card">
+<h2>4. カットの状態（3段階）</h2>
+<table>
+<tr><th>状態</th><th>意味</th></tr>
+<tr><td><span class="st pending">未撮影</span></td><td>まだ撮っていない</td></tr>
+<tr><td><span class="st shot">撮影済み・要確認</span></td><td>一眼で撮ったつもりだが、画像の確認はまだ。「撮ったつもり」の事故を防ぐため、このアプリでは撮影直後は必ずこの状態になります</td></tr>
+<tr><td><span class="st confirmed">確認完了</span></td><td>一眼の画像を見て、納品候補として確保できた</td></tr>
+</table>
+<p>カット一覧では、右側の状態ボタンを押すたびに 未撮影 → 撮影済み・要確認 → 確認完了 → 未撮影 と切り替わります。「要確認だけ」フィルターで、確認が終わっていないカットだけを絞り込めます。</p>
+</div>
+
+<div class="card">
+<h2>5. 優先度</h2>
+<table>
+<tr><th>優先度</th><th>意味</th></tr>
+<tr><td>必須</td><td>撮り忘れたら事故になるカット。未撮影のまま案件を完了にしようとすると警告が出ます</td></tr>
+<tr><td>推奨</td><td>時間があれば撮るカット</td></tr>
+<tr><td>任意</td><td>余裕があれば撮るカット</td></tr>
+</table>
+</div>
+
+<div class="card">
+<h2>6. 画面の説明</h2>
+<table>
+<tr><th>画面</th><th>できること</th></tr>
+<tr><td>案件一覧</td><td>案件の作成、進捗の確認、複製、JSON書き出し／読み込み</td></tr>
+<tr><td>案件の編集</td><td>案件情報の変更、カットの追加・編集・削除・並べ替え</td></tr>
+<tr><td>撮影中モード</td><td>現在のカットの表示、撮影済みへの変更、前／次への移動</td></tr>
+<tr><td>カット一覧</td><td>全カットの状態変更、フィルター（未撮影だけ／必須だけ／要確認だけ）</td></tr>
+<tr><td>撮影後チェック</td><td>終了時チェックリスト、CSV／JSON書き出し、案件の完了</td></tr>
+</table>
+<h3>案件の複製について</h3>
+<p>毎年同じ学校・同じチームを撮る場合は、去年の案件を「複製」するのが一番早い方法です。複製するとカットリストとメモはそのまま引き継がれ、状態だけがすべて「未撮影」に戻ります。</p>
+<h3>ジャンルを変えた時の注意</h3>
+<p>編集画面でジャンルを変更して保存すると、カットリストは新しいジャンルのテンプレートで<strong>入れ直し</strong>になります。すでにある案件のカットを残したい場合は、ジャンルを変更しないでください。</p>
+</div>
+
+<div class="card">
+<h2>7. テンプレート（最初に入るカット）</h2>
+<table>
+<tr><th>ジャンル</th><th>件数</th><th>主なカット</th></tr>
+<tr><td>学校・集合写真</td><td>9件</td><td>全員集合、クラス別集合、担任・先生との集合、個人写真（全員分）ほか</td></tr>
+<tr><td>スポーツ団体・卒団</td><td>11件</td><td>チーム全員集合、監督・コーチとの集合、卒団生全員、卒団生個人（全員分）ほか</td></tr>
+<tr><td>コスプレ</td><td>10件</td><td>全身・正面（縦）、全身・斜め、バストアップ、顔アップ、武器・小道具アップほか</td></tr>
+<tr><td>車両</td><td>12件</td><td>フロント正面、斜め45度（前／後）、サイド、リア、ホイール、内装ほか</td></tr>
+<tr><td>汎用</td><td>6件</td><td>メインカット、別アングル、縦構図、引き、寄り、オフショット</td></tr>
+</table>
+<p class="muted">テンプレートはあくまで出発点です。現場に合わせて自由に追加・削除してください。</p>
+</div>
+
+<div class="card">
+<h2>8. 書き出しとバックアップ</h2>
+<table>
+<tr><th>形式</th><th>場所</th><th>用途</th></tr>
+<tr><td>JSON書き出し</td><td>案件一覧／撮影後チェック</td><td><strong>バックアップの本命。</strong>全案件を1ファイルに保存。読み込めば元に戻ります</td></tr>
+<tr><td>JSON読み込み</td><td>案件一覧</td><td>バックアップからの復元。いまのデータと<strong>置き換わり</strong>ます（足し算にはなりません）</td></tr>
+<tr><td>CSV書き出し</td><td>撮影後チェック</td><td>案件ごとの記録用。ExcelやNotionへの取り込み、納品記録の保管に</td></tr>
+</table>
+<div class="warn"><strong>注意：</strong>書き出したJSON／CSVには、入力した案件名・場所・メモがそのまま入ります。公開リポジトリなど人目に触れる場所には置かないでください。</div>
+</div>
+
+<div class="card">
+<h2>9. 撮影後チェックの項目</h2>
+<ol>
+<li>必須カットの撮影が完了した</li>
+<li>集合写真の人数を確認した</li>
+<li>集合写真の目つぶりを確認した</li>
+<li>個人写真の撮影漏れを確認した</li>
+<li>縦構図で必要なカットを確認した</li>
+<li>SDカード／メディアの保存状況を確認した</li>
+<li>バックアップを実施した（または実施予定をメモした）</li>
+</ol>
+</div>
+
+<div class="card">
+<h2>10. データとプライバシー</h2>
+<ul>
+<li>データの保存先は端末内の localStorage だけです。サーバー送信、アクセス解析、広告は一切ありません</li>
+<li>アプリのコード自体に個人情報は含まれていません。公開されているのは「空のアプリ」だけです</li>
+<li>案件名に学校名や個人名を入れるかどうかは運用次第です。端末のパスコードがそのまま守りになります</li>
+<li>機種変更の前には必ずJSON書き出しをして、新しい端末で読み込んでください</li>
+</ul>
+</div>
+
+<div class="card">
+<h2>11. よくある質問・困った時</h2>
+<h3>データが消えた</h3>
+<p>Safariのデータを消去した、別のブラウザで開いた、ホーム画面アプリではなくブラウザのタブで使っていた、などが原因として考えられます。JSONバックアップがあれば「JSON読み込み」で復元できます。バックアップが無い場合は復元できません。</p>
+<h3>オフラインで使える？</h3>
+<p>使えます。一度オンラインで開けば、本体が端末に保存され、圏外・機内モードでも動きます（撮影現場の体育館や山間部でも大丈夫な設計です）。</p>
+<h3>「撮影済み」ボタンが反応しない気がする</h3>
+<p>撮影中モード下部の固定ボタンです。押すと次の未撮影カットへ進むので、画面のカット名が変わっていれば正常です。進捗バー（必須 ○/○、全体 ○%）でも確認できます。</p>
+<h3>画面が暗くなってしまう</h3>
+<p>撮影中モードでは、対応端末で画面が暗くならないよう試みる作りになっていますが、端末やブラウザの仕様で効かない場合があります。その場合は端末側の自動ロック時間を長めにしてください。</p>
+<h3>カットを間違えて「撮影済み」にした</h3>
+<p>撮影中モードの「1つ戻す」で現在のカットを未撮影に戻せます。一覧画面では状態ボタンを押して切り替えてください。</p>
+</div>
+
+<div class="card">
+<h2>12. バージョン</h2>
+<p>v0.1（2026-11-18公開）初版。アプリ本体：<a href="./index.html">カットリスト撮影</a>／ソース：github.com/hanaphoto/cutlist-camera</p>
+<p class="muted">この説明書はアプリと同じ場所で公開されています（manual.html）。アプリの「説明書」リンクからいつでも開けます。</p>
+</div>
+
+</main>
+</body>
+</html>

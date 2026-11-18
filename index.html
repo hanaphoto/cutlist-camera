@@ -132,6 +132,7 @@ function vHome(){
     <button class="btn primary" onclick="createProject()">＋ 新規案件</button>
     <button class="btn" onclick="exportJSON()">JSON書き出し</button>
     <button class="btn" onclick="document.getElementById('importFile').click()">JSON読み込み</button>
+    <a class="btn" href="manual.html" style="text-decoration:none">説明書</a>
   </div>
   ${list.length?"":'<div class="card muted">案件がまだありません。「新規案件」から始めてください。</div>'}
   ${list.map(p=>{const pr=progress(p);return `<div class="card">
