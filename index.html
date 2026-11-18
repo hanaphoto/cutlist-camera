@@ -30,7 +30,10 @@ main{max-width:720px;margin:0 auto;padding:14px 14px 110px}
 .badge.opt{color:var(--muted)}
 .st{font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;color:#fff}
 .st.pending{background:var(--gray)} .st.shot{background:var(--yellow)} .st.confirmed{background:var(--green)}
-input,select,textarea{width:100%;font-size:16px;padding:11px;border:1px solid var(--line);border-radius:10px;background:#fff;margin:4px 0 12px}
+input,select,textarea{width:100%;max-width:100%;min-width:0;font-size:16px;padding:11px;border:1px solid var(--line);border-radius:10px;background:#fff;margin:4px 0 12px}
+input[type="date"]{-webkit-appearance:none;appearance:none;display:block;width:100%;max-width:100%;min-width:0;min-height:48px;text-align:left}
+input[type="date"]::-webkit-date-and-time-value{text-align:left;margin:0}
+input[type="date"]::-webkit-calendar-picker-indicator{margin:0;padding:0}
 label{font-size:13px;font-weight:700;color:var(--muted)}
 .bigshot{font-size:26px;font-weight:800;line-height:1.35;margin:8px 0}
 .note{white-space:pre-wrap;color:var(--muted);font-size:15px}

@@ -18,7 +18,7 @@
 ## ファイル
 - `index.html` 本体（フレームワーク・外部ライブラリ無し、保存は localStorage）
 - `manual.html` 説明書ページ
-- `manifest.webmanifest` / `sw.js`（キャッシュ名 cutlist-v2）
+- `manifest.webmanifest` / `sw.js`（キャッシュ名 cutlist-v3）
 - `icon-180.png` / `icon-192.png` / `icon-512.png` / `icon-maskable-512.png`
   - デザイン：紺地に白いリスト用紙＋琥珀色のチェック円。`make_icons.py` で再生成可
 
